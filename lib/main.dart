@@ -1,28 +1,46 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'login_page.dart';
 
-class UserState extends ChangeNotifier {
-  User? user;
+final userProvider = StateProvider((ref) {
+  return FirebaseAuth.instance.currentUser;
+});
 
-  void setUser(User newUser) {
-    user = newUser;
-    notifyListeners();
-  }
-}
+final infoTextProvider = StateProvider.autoDispose((ref) {
+  return '';
+});
+
+final emailProvider = StateProvider.autoDispose((ref) {
+  return '';
+});
+
+final passwordProvider = StateProvider.autoDispose((ref) {
+  return '';
+});
+
+final messageTextProvider = StateProvider.autoDispose((ref) {
+  return '';
+});
+
+final postsQueryProvider = StreamProvider.autoDispose((ref) {
+  return FirebaseFirestore.instance.collection('posts').orderBy('date').snapshots();
+});
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  runApp(const ChatApp());
+  runApp(
+    ProviderScope(
+      child: ChatApp(),
+    ),
+  );
 }
 
 class ChatApp extends StatelessWidget {
-  const ChatApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

@@ -3,17 +3,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'add_post_page.dart';
 import 'login_page.dart';
 import 'main.dart';
 
-class ChatPage extends StatelessWidget {
+
+class ChatPage extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final UserState userState = Provider.of<UserState>(context);
-    final User user = userState.user!;
+  Widget build(BuildContext context, ScopedReader watch) {
+    final User user = watch(userProvider).state!;
+    final AsyncValue<QuerySnapshot> asyncPostsQuery = watch(postsQueryProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -38,33 +39,35 @@ class ChatPage extends StatelessWidget {
             child: Text("ログイン情報：${user.email}"),
           ),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('posts').orderBy('date').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  final List<DocumentSnapshot> documents = snapshot.data!.docs;
-                  return ListView(
-                    children: documents.map((document) {
-                      return Card(
-                        child: ListTile(
-                          title: Text(document['text']),
-                          subtitle: Text(document['email']),
-                          trailing: document['email'] == user.email
-                            ? IconButton(
-                              icon: Icon(Icons.delete),
-                              onPressed: () async {
-                                await FirebaseFirestore.instance.collection('posts').doc(document.id).delete();
-                              },
-                            )
-                            : null,
-                          ),
-                        );
-                    }).toList(),
-                  );
-                }
-
+            child: asyncPostsQuery.when(
+              data: (QuerySnapshot query) {
+                return ListView(
+                  children: query.docs.map((document) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(document['text']),
+                        subtitle: Text(document['email']),
+                        trailing: document['email'] == user.email
+                          ? IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () async {
+                              await FirebaseFirestore.instance.collection('posts').doc(document.id).delete();
+                            },
+                          )
+                          : null,
+                        ),
+                      );
+                  }).toList(),
+                );
+              },
+              loading: () {
                 return Center(
                   child: Text('読込中...'),
+                );
+              },
+              error: (e, stackTrace) {
+                return Center(
+                  child: Text(e.toString()),
                 );
               },
             ),

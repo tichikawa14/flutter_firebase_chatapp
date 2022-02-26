@@ -1,23 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'chat_page.dart';
-import 'package:provider/provider.dart';
 import 'main.dart';
 
 // ログイン画面用Widget
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerWidget {
   @override
-  _LoginPageState createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  String infoText = "";
-  String email = "";
-  String password = "";
-
-  Widget build(BuildContext context) {
-    final UserState userState = Provider.of<UserState>(context)
+  Widget build(BuildContext context, ScopedReader watch) {
+    final infoText = watch(infoTextProvider).state;
+    final email = watch(emailProvider).state;
+    final password = watch(passwordProvider).state;
 
     return Scaffold(
       body: Center(
@@ -28,18 +22,14 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 decoration: InputDecoration(labelText: 'メールアドレス'),
                 onChanged: (String value) {
-                  setState(() {
-                    email = value;
-                  });
+                  context.read(emailProvider).state = value;
                 },
               ),
               TextFormField(
                 decoration: InputDecoration(labelText: 'パスワード'),
                 obscureText: true,
                 onChanged: (String value) {
-                  setState(() {
-                    password = value;
-                  });
+                  context.read(passwordProvider).state = value;
                 },
               ),
               Container(
@@ -58,16 +48,15 @@ class _LoginPageState extends State<LoginPage> {
                         password: password,
                       );
 
-                      userState.setUser(result.user!);
+                      context.read(userProvider).state = result.user;
+
                       await Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) {
                           return ChatPage();
                         }),
                       );
                     } catch (e) {
-                      setState (() {
-                        infoText = "登録に失敗しました：${e.toString()}";
-                      });
+                      context.read(infoTextProvider).state = "登録に失敗しました：${e.toString()}";
                     }
                   },
                 ),
@@ -90,14 +79,12 @@ class _LoginPageState extends State<LoginPage> {
                       // チャット画面に遷移＋ログイン画面を破棄
                       await Navigator.of(context).pushReplacement(
                         MaterialPageRoute(builder: (context) {
-                          return ChatPage(result.user!);
+                          return ChatPage();
                         }),
                       );
                     } catch (e) {
                       // ログインに失敗した場合
-                      setState(() {
-                        infoText = "ログインに失敗しました：${e.toString()}";
-                      });
+                      context.read(infoTextProvider).state = "ログインに失敗しました：${e.toString()}";
                     }
                   },
                 ),

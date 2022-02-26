@@ -3,21 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'main.dart';
 
-class AddPostPage extends StatefulWidget {
+class AddPostPage extends ConsumerWidget {
   @override
-  _AddPostPageState createState() => _AddPostPageState();
-}
-
-class _AddPostPageState extends State<AddPostPage> {
-  String messageText = '';
-
-  Widget build(BuildContext context) {
-    final UserState userState = Provider.of<UserState>(context);
-    final User user = userState.user!;
+  Widget build(BuildContext context, ScopedReader watch) {
+    final user = watch(userProvider).state!;
+    final messageText = watch(messageTextProvider).state;
 
     return Scaffold(
       appBar: AppBar(
@@ -34,9 +28,7 @@ class _AddPostPageState extends State<AddPostPage> {
                 keyboardType: TextInputType.multiline,
                 maxLines: 3,
                 onChanged: (String value) {
-                  setState(() {
-                    messageText = value;
-                  });
+                  context.read(messageTextProvider).state = value;
                 },
               ),
               const SizedBox(height: 8),
